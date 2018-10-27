@@ -4,6 +4,7 @@ import nltk
 import os
 import random
 import numpy as np
+nltk.download('punkt')
 
 PROVERBE_LANGUAGE = "french"
 grammes = {}
