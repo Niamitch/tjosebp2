@@ -9,7 +9,7 @@ nltk.download('punkt')
 PROVERBE_LANGUAGE = "french"
 grammes = {}
 featuresSet = []
-def get_sentiment_features(line):
+def get_word_counts(line):
     features = {}
     tokens = nltk.word_tokenize(line, PROVERBE_LANGUAGE)
     for token in tokens:
@@ -25,11 +25,11 @@ def get_sentiment_features(line):
 def main():
     for i in os.listdir("./books/Book/neg_Bk"):
         with open("./books/Book/neg_Bk/"+i, encoding = "ISO-8859-1") as f:
-            features = get_sentiment_features(f.read())
+            features = get_word_counts(f.read())
             featuresSet.append((features,0))
     for i in os.listdir("./books/Book/pos_Bk"):
         with open("./books/Book/pos_Bk/"+i, encoding = "ISO-8859-1") as f:
-            features = get_sentiment_features(f.read())
+            features = get_word_counts(f.read())
             featuresSet.append((features, 1))
     random.shuffle(featuresSet)
     size = len(featuresSet)
