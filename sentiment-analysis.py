@@ -8,7 +8,7 @@ nltk.download('punkt')
 
 PROVERBE_LANGUAGE = "french"
 grammes = {}
-featuresSet = []
+
 def get_word_counts(line):
     features = {}
     tokens = nltk.word_tokenize(line, PROVERBE_LANGUAGE)
@@ -23,6 +23,7 @@ def get_word_counts(line):
     return features
 
 def main():
+    featuresSet = []
     for i in os.listdir("./books/Book/neg_Bk"):
         with open("./books/Book/neg_Bk/"+i, encoding = "ISO-8859-1") as f:
             features = get_word_counts(f.read())
