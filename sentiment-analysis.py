@@ -13,10 +13,12 @@ def get_sentiment_features(line):
     features = {}
     tokens = nltk.word_tokenize(line, PROVERBE_LANGUAGE)
     for token in tokens:
-        if token not in features:
-            features[token] = 1
-        else:
-            features[token] +=1
+        pattern = re.compile("\w*")
+        if(pattern.match(token)):
+            if token not in features:
+                features[token] = 1
+            else:
+                features[token] +=1
 
     return features
 
