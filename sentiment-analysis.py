@@ -43,19 +43,23 @@ def get_features(folder, output_class, normalization_function, attribute_selecti
             features_set.append((features, output_class))
     return features_set
 
-def main():
-    featuresSet = []
+def get_train_test_sets(features_set):
+    random.shuffle(features_set)
+    size = len(features_set)
+    train_set, test_set = features_set[int(size * 0.8):], features_set[:int(size * 0.2)]
+    return train_set, test_set
 
-    featuresSet = featuresSet + get_features("./books/Book/neg_Bk", 0, no_normalization, get_all_features, get_features_count)
-    featuresSet = featuresSet + get_features("./books/Book/pos_Bk", 1, no_normalization, get_all_features, get_features_count)
-
-    random.shuffle(featuresSet)
-    size = len(featuresSet)
-    train_set, test_set = featuresSet[int(size*0.8):], featuresSet[:int(size*0.2)]
-    classifier = nltk.NaiveBayesClassifier.train(train_set)
+def train_and_test_classifier(classifier, normalization_function, attribute_selection_function, attribute_value_selection_function):
+    features_set = []
+    features_set = features_set + get_features("./books/Book/neg_Bk", 0, normalization_function, attribute_selection_function, attribute_value_selection_function)
+    features_set = features_set + get_features("./books/Book/pos_Bk", 1, normalization_function, attribute_selection_function, attribute_value_selection_function)
+    train_set, test_set = get_train_test_sets(features_set)
+    classifier = classifier.train(train_set)
     print(nltk.classify.accuracy(classifier, test_set))
 
-
+def main():
+    classifier = nltk.NaiveBayesClassifier
+    train_and_test_classifier(classifier, no_normalization, get_all_features, get_features_count)
 
 if __name__ == "__main__":
    main()
