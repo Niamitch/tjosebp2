@@ -3,8 +3,12 @@ import re
 import nltk
 import os
 import random
-import numpy as np
+from nltk.stem import PorterStemmer, WordNetLemmatizer
+from nltk.corpus import stopwords
+
 nltk.download('punkt')
+nltk.download('wordnet')
+nltk.download('stopwords')
 
 PROVERBE_LANGUAGE = "french"
 grammes = {}
@@ -13,9 +17,16 @@ grammes = {}
 def no_normalization(token):
     return token
 
+def stemming_normalization(token):
+    ps = PorterStemmer()
+    return ps.stem(token)
+
+def lemmatize_normalization(token):
+    lemmatizer = WordNetLemmatizer()
+    return lemmatizer.lemmatize(token)
+
 # Attribute selection functions
 def get_all_features(normalization_function, attribute_value_selection_function, line):
-    features = {}
     tokens = nltk.word_tokenize(line, PROVERBE_LANGUAGE)
     filtered_tokens = []
     for token in tokens:
@@ -23,6 +34,23 @@ def get_all_features(normalization_function, attribute_value_selection_function,
         if(pattern.match(token)):
             filtered_tokens.append(token)
     return attribute_value_selection_function(filtered_tokens, normalization_function)
+
+def get_all_features_with_frequency_upper_than_one(normalization_function, attribute_value_selection_function, line):
+    feature_count_by_feature = get_all_features(normalization_function, attribute_value_selection_function, line)
+    filtered_feature_count_by_feature = {}
+    for feature in feature_count_by_feature:
+        if feature_count_by_feature[feature] > 1:
+            filtered_feature_count_by_feature[feature] = feature_count_by_feature[feature]
+    return filtered_feature_count_by_feature
+
+def get_all_features_without_stop_words(normalization_function, attribute_value_selection_function, line):
+    feature_count_by_feature = get_all_features(normalization_function, attribute_value_selection_function, line)
+    stop_words = set(stopwords.words('english'))
+    filtered_feature_count_by_feature = {}
+    for feature in feature_count_by_feature:
+        if feature not in stop_words:
+            filtered_feature_count_by_feature[feature] = feature_count_by_feature[feature]
+    return filtered_feature_count_by_feature
 
 #Attribute value selection functions
 def get_features_count(tokens, normalization_function):
@@ -46,7 +74,7 @@ def get_features(folder, output_class, normalization_function, attribute_selecti
 def get_train_test_sets(features_set):
     random.shuffle(features_set)
     size = len(features_set)
-    train_set, test_set = features_set[int(size * 0.8):], features_set[:int(size * 0.2)]
+    train_set, test_set = features_set[:int(size * 0.8)], features_set[int(size * 0.8):]
     return train_set, test_set
 
 def train_and_test_classifier(classifier, normalization_function, attribute_selection_function, attribute_value_selection_function):
@@ -59,7 +87,8 @@ def train_and_test_classifier(classifier, normalization_function, attribute_sele
 
 def main():
     classifier = nltk.NaiveBayesClassifier
-    train_and_test_classifier(classifier, no_normalization, get_all_features, get_features_count)
+    normalization_methods = [no_normalization, stemming_normalization, lemmatize_normalization]
+    train_and_test_classifier(classifier, lemmatize_normalization, get_all_features_without_stop_words, get_features_count)
 
 if __name__ == "__main__":
    main()
