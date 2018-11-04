@@ -5,9 +5,9 @@ import os
 import random
 from nltk.stem import PorterStemmer, WordNetLemmatizer
 from nltk.corpus import stopwords
-from nltk import pos_tag
-from nltk.metrics.scores import (precision, recall)
+from nltk import pos_tag, collections
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics import precision_score, recall_score
 from nltk.corpus import sentiwordnet as swn
 
 nltk.download('punkt')
@@ -150,15 +150,45 @@ def train_and_test_classifier(classifier, normalization_function, attribute_sele
     features_set = features_set + get_features(pos_corpus, 1, normalization_function, attribute_selection_function, attribute_value_selection_function)
     train_set, test_set = get_train_test_sets(features_set)
     classifier = classifier.train(train_set)
+    real_test_classes = []
+    predicted_test_classes = []
+    for test in test_set:
+        real_test_classes.append(test[1])
+        predicted_test_classes.append(classifier.classify(test[0]))
     print('Accuracy: ' + str(nltk.classify.accuracy(classifier, test_set)))
+    print('Precision: ' + str(precision_score(real_test_classes, predicted_test_classes)))
+    print('Recall: ' + str(recall_score(real_test_classes, predicted_test_classes)))
 
 def main():
     load_corpus()
-    classifier = nltk.NaiveBayesClassifier
     normalization_methods = [no_normalization, stemming_normalization, lemmatize_normalization]
-    feature_selection_methods = [get_all_features, get_all_features_with_frequency_upper_than_one, get_all_features_without_stop_words, get_all_features_with_open_class]
-    feature_attribute_value_methods = [get_features_count, get_features_presence, get_features_tf_idf, get_positive_negative_feature]
-    train_and_test_classifier(classifier, lemmatize_normalization, get_all_features, get_positive_negative_feature)
+    feature_selection_methods = [get_all_features, get_all_features_with_frequency_upper_than_one,
+                                 get_all_features_without_stop_words, get_all_features_with_open_class]
+    feature_attribute_value_methods = [get_features_count, get_features_presence, get_features_tf_idf,
+                                       get_positive_negative_feature]
+
+
+
+    # print('For Naive Bayes classifier')
+    # classifier = nltk.NaiveBayesClassifier
+    # for normalization_method in normalization_methods:
+    #     for feature_selection_method in feature_selection_methods:
+    #         for feature_attribute_value_method in feature_attribute_value_methods:
+    #             print('Normalization: ' + str(normalization_method.__name__))
+    #             print('Feature selection: ' + str(feature_selection_method.__name__))
+    #             print('Feature attribute value selection: ' + str(feature_attribute_value_method.__name__))
+    #             train_and_test_classifier(classifier, normalization_method, feature_selection_method, feature_attribute_value_method)
+
+    print('For Logistic regression classifier')
+    classifier = nltk.MaxentClassifier
+    # need to specifiy 3 iterations at max and then run to see other problems
+    for normalization_method in normalization_methods:
+        for feature_selection_method in feature_selection_methods:
+            for feature_attribute_value_method in feature_attribute_value_methods:
+                print('Normalization: ' + str(normalization_method.__name__))
+                print('Feature selection: ' + str(feature_selection_method.__name__))
+                print('Feature attribute value selection: ' + str(feature_attribute_value_method.__name__))
+                train_and_test_classifier(classifier, normalization_method, feature_selection_method, feature_attribute_value_method)
 
 if __name__ == "__main__":
    main()
