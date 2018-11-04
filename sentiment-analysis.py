@@ -8,11 +8,13 @@ from nltk.corpus import stopwords
 from nltk import pos_tag
 from nltk.metrics.scores import (precision, recall)
 from sklearn.feature_extraction.text import TfidfVectorizer
+from nltk.corpus import sentiwordnet as swn
 
 nltk.download('punkt')
 nltk.download('wordnet')
 nltk.download('stopwords')
 nltk.download('averaged_perceptron_tagger')
+nltk.download('sentiwordnet')
 
 tfidf = None
 tfidf_matrix = None
@@ -95,6 +97,22 @@ def get_features_presence(tokens, normalization_function):
         feature_presence[feature] = 1
     return feature_presence
 
+def get_positive_negative_feature(tokens, normalization_function):
+    features_count_by_sentiment = {}
+    features_count_by_sentiment[0] = 0
+    features_count_by_sentiment[1] = 0
+    for token in tokens:
+        token = normalization_function(token)
+        token_analyzed = swn.senti_synsets(token)
+        list_token_analyzed = list(token_analyzed)
+        if token_analyzed and (len(list_token_analyzed) > 0):
+            token_sentiments = list_token_analyzed[0]
+            if token_sentiments._pos_score > token_sentiments._neg_score:
+                features_count_by_sentiment[1] = features_count_by_sentiment[1] + 1
+            elif token_sentiments._pos_score < token_sentiments._neg_score:
+                features_count_by_sentiment[0] = features_count_by_sentiment[0] + 1
+    return features_count_by_sentiment
+
 # Execution code
 def get_features(corpus, output_class, normalization_function, attribute_selection_function, attribute_value_selection_function):
     features_set = []
@@ -139,7 +157,8 @@ def main():
     classifier = nltk.NaiveBayesClassifier
     normalization_methods = [no_normalization, stemming_normalization, lemmatize_normalization]
     feature_selection_methods = [get_all_features, get_all_features_with_frequency_upper_than_one, get_all_features_without_stop_words, get_all_features_with_open_class]
-    train_and_test_classifier(classifier, lemmatize_normalization, get_all_features, get_features_tf_idf)
+    feature_attribute_value_methods = [get_features_count, get_features_presence, get_features_tf_idf, get_positive_negative_feature]
+    train_and_test_classifier(classifier, lemmatize_normalization, get_all_features, get_positive_negative_feature)
 
 if __name__ == "__main__":
    main()
