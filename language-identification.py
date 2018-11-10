@@ -1,6 +1,7 @@
 import nltk
 import os
 import random
+from sklearn.metrics import precision_score, recall_score
 
 def create_gramme(sentence,gramme_lenght):
     features = {}
@@ -43,46 +44,33 @@ def generate_train_test_sets(sets):
     random.shuffle(test_set)
     return train_set, test_set
 
-def calculate_stats(nb_of_classes,cm):
-    true_positives = 0
-    false_negatives = 0
-    false_positives = 0
-
-    for i in range(nb_of_classes):
-        for j in range(nb_of_classes):
-            if i == j:
-                true_positives += cm[i,j]
-            else:
-                false_negatives += cm[i,j]
-                false_positives += cm[i,j]
-    return true_positives,false_negatives,false_positives
-
-def print_stats(stats):
-    true_positives = stats[0]
-    false_negatives = stats[1]
-    false_positives = stats[2]
-    print("Accuracy = "+str(true_positives/float(true_positives+false_positives+false_negatives)))
-    print("Precision = "+str(true_positives/float(true_positives+false_positives)))
-    print("Recall = " + str(true_positives / float(true_positives + false_negatives)))
+def print_stats(classifier,test_set,real_test_classes,predicted_test_classes):
+    cm = nltk.ConfusionMatrix(real_test_classes, predicted_test_classes)
+    print('Accuracy: ' + str(nltk.classify.accuracy(classifier, test_set)))
+    print('Precision: ' + str(precision_score(real_test_classes, predicted_test_classes, average='micro')))
+    print('Recall: ' + str(recall_score(real_test_classes, predicted_test_classes, average='micro')))
+    print(cm.pretty_format(sort_by_count=True, show_percents=True, truncate=9))
 
 
 def main():
     features_set = generate_features(3)
-    nb_of_classes = len(features_set)
     train_set, test_set = generate_train_test_sets(features_set)
     bayesClassifier = nltk.NaiveBayesClassifier.train(train_set)
     algorithm = nltk.classify.MaxentClassifier.ALGORITHMS[0]
     regClassifier = nltk.MaxentClassifier.train(train_set, algorithm, max_iter=3)
     element_list = list(zip(*test_set))
     test_features = list(element_list)[0]
-    guessed_classes = generate_guessed_classes(bayesClassifier,test_features)
-    test_class= list(element_list[1])
-    cm = nltk.ConfusionMatrix(test_class, guessed_classes)
-    print_stats(calculate_stats(nb_of_classes,cm))
 
-    print(cm.pretty_format(sort_by_count=True, show_percents=True, truncate=9))
-    print(nltk.classify.accuracy(bayesClassifier, test_set))
-    print(nltk.classify.accuracy(regClassifier, test_set))
+    bayesian_guessed_classes = generate_guessed_classes(bayesClassifier,test_features)
+    reg_guessed_classes = generate_guessed_classes(regClassifier,test_features)
+    test_class= list(element_list[1])
+
+    print("Bayes stats:")
+    print_stats(bayesClassifier,test_set,test_class,bayesian_guessed_classes)
+    print("Regs stats:")
+    print_stats(regClassifier, test_set, test_class, reg_guessed_classes)
+
+
 
 if __name__ == "__main__":
    main()
