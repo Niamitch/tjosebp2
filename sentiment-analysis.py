@@ -207,7 +207,7 @@ def main():
 
     execute_naive_bayes_classifier(normalization_methods, feature_selection_methods, feature_attribute_value_methods)
 
-    #execute_logistic_regression_classifier(normalization_methods, feature_selection_methods, feature_attribute_value_methods)
+    execute_logistic_regression_classifier(normalization_methods, feature_selection_methods, feature_attribute_value_methods)
 
 if __name__ == "__main__":
    main()
