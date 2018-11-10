@@ -13,6 +13,9 @@ def create_gramme(sentence,gramme_lenght):
             features[gramme] += 1
     return features
 
+def get_class_name(file):
+    return file.split('-')[0][:2]
+
 def generate_features(gramme_lenght):
     feature_set = []
     language_class = 0
@@ -20,10 +23,20 @@ def generate_features(gramme_lenght):
         feature_set.append([])
         with open("./identification_langue/identification_langue/corpus_entrainement/" + i, encoding="ISO-8859-1") as f:
             line = f.read()
+            class_name = get_class_name(i)
             sentences = nltk.sent_tokenize(line)
-            for sentence in sentences:
-                features = create_gramme(sentence.lower(),gramme_lenght)
-                feature_set[language_class].append((features,language_class))
+            document = []
+            for i in range(len(sentences)):
+                document.append(create_gramme(sentences[i].lower(),gramme_lenght))
+                if (i+1) % 3 == 0:
+                    features = { k: document[0].get(k, 0) + document[1].get(k, 0) + document[2].get(k, 0) for k in set(document[0]) | set(document[1]) | set(document[2])}
+                    feature_set[language_class].append((features, class_name))
+                    document = []
+            if len(document) == 2:
+                features = {k: document[0].get(k, 0) + document[1].get(k, 0) for k in set(document[0]) | set(document[1])}
+                feature_set[language_class].append((features, class_name))
+            if len(document) == 1:
+                feature_set[language_class].append((document[0], class_name))
         language_class += 1
     return feature_set
 
