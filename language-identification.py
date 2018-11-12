@@ -16,6 +16,37 @@ def create_gramme(sentence,gramme_lenght):
 def get_class_name(file):
     return file.split('-')[0][:2]
 
+def get_test_class_name(file):
+    name = file.split('-')[1].split('.')[0][:2]
+    if name == "pt":
+        name = "po"
+    return name
+
+def generate_test_features(gramme_lenght,caracter_read):
+    feature_set = []
+    language_class = 0
+    for i in os.listdir("./identification_langue/identification_langue/corpus_test1"):
+        with open("./identification_langue/identification_langue/corpus_test1/" + i, encoding="ISO-8859-1") as f:
+            line = f.read()
+            class_name = get_test_class_name(i)
+            sentences = nltk.sent_tokenize(line[:caracter_read])
+            document = []
+            for i in range(len(sentences)):
+                document.append(create_gramme(sentences[i].lower(), gramme_lenght))
+                if (i + 1) % 3 == 0:
+                    features = {k: document[0].get(k, 0) + document[1].get(k, 0) + document[2].get(k, 0) for k in
+                                set(document[0]) | set(document[1]) | set(document[2])}
+                    feature_set.append((features, class_name))
+                    document = []
+            if len(document) == 2:
+                features = {k: document[0].get(k, 0) + document[1].get(k, 0) for k in
+                            set(document[0]) | set(document[1])}
+                feature_set.append((features, class_name))
+            if len(document) == 1:
+                feature_set.append((document[0], class_name))
+        language_class += 1
+    return feature_set
+
 def generate_features(gramme_lenght):
     feature_set = []
     language_class = 0
@@ -62,26 +93,34 @@ def print_stats(classifier,test_set,real_test_classes,predicted_test_classes):
     print('Accuracy: ' + str(nltk.classify.accuracy(classifier, test_set)))
     print('Precision: ' + str(precision_score(real_test_classes, predicted_test_classes, average='micro')))
     print('Recall: ' + str(recall_score(real_test_classes, predicted_test_classes, average='micro')))
-    print(cm.pretty_format(sort_by_count=True, show_percents=True, truncate=9))
+    #print(cm.pretty_format(sort_by_count=True, show_percents=True, truncate=9))
 
+def generate_train_set(features_set):
+    train_set = [item for sublist in features_set for item in sublist]
+    random.shuffle(train_set)
+    return train_set
 
 def main():
-    features_set = generate_features(3)
-    train_set, test_set = generate_train_test_sets(features_set)
-    bayesClassifier = nltk.NaiveBayesClassifier.train(train_set)
-    algorithm = nltk.classify.MaxentClassifier.ALGORITHMS[0]
-    regClassifier = nltk.MaxentClassifier.train(train_set, algorithm, max_iter=3)
-    element_list = list(zip(*test_set))
-    test_features = list(element_list)[0]
+    grammes = 3
+    for i in range(5,105,5):
+        features_set = generate_features(grammes)
+        train_set = generate_train_set(features_set)
+        # train_set, test_set = generate_train_test_sets(features_set)
+        test_set = generate_test_features(grammes,i)
+        bayesClassifier = nltk.NaiveBayesClassifier.train(train_set)
+        algorithm = nltk.classify.MaxentClassifier.ALGORITHMS[0]
+        regClassifier = nltk.MaxentClassifier.train(train_set, algorithm, max_iter=3)
+        element_list = list(zip(*test_set))
+        test_features = list(element_list)[0]
 
-    bayesian_guessed_classes = generate_guessed_classes(bayesClassifier,test_features)
-    reg_guessed_classes = generate_guessed_classes(regClassifier,test_features)
-    test_class= list(element_list[1])
-
-    print("Bayes stats:")
-    print_stats(bayesClassifier,test_set,test_class,bayesian_guessed_classes)
-    print("Regs stats:")
-    print_stats(regClassifier, test_set, test_class, reg_guessed_classes)
+        bayesian_guessed_classes = generate_guessed_classes(bayesClassifier,test_features)
+        reg_guessed_classes = generate_guessed_classes(regClassifier,test_features)
+        test_class= list(element_list[1])
+        print("For "+str(i)+"caracters read")
+        print("Bayes stats:")
+        print_stats(bayesClassifier,test_set,test_class,bayesian_guessed_classes)
+        print("Regs stats:")
+        print_stats(regClassifier, test_set, test_class, reg_guessed_classes)
 
 
 
